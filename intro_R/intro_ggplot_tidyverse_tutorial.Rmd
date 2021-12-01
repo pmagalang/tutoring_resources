@@ -1,0 +1,217 @@
+---
+title: "Intro to data visualization in ggplot and data wrangling in tidyverse"
+author: "Paulo Magalang"
+date: "11/29/2021"
+output: html_document
+---
+
+```{r}
+# load in packages
+library(tidyverse)
+```
+
+```{r}
+# load in data
+# lets use the iris dataset first which contains information on 50 samples of I. setosa, I. virginica, and I. versicolor
+
+data("iris")
+head(iris)
+```
+
+
+```{r}
+# convert to tibble so we can use these data with tidyverse functions
+iris <- as_tibble(iris)
+head(iris)
+```
+
+
+```{r}
+# get summary statistics using Sepal.Length for example
+summary(iris$Sepal.Length)
+```
+
+
+```{r}
+# histograms and density plots in ggplot
+ggplot(iris, aes(x = Sepal.Length)) + geom_histogram(binwidth = 0.1)
+ggplot(iris, aes(x = Sepal.Length)) + geom_density(fill = "blue")
+# not very informative
+
+# we can subset the data into species and visualize
+ggplot(iris, aes(x = Sepal.Length, fill = Species)) + geom_histogram(binwidth = 0.1)
+ggplot(iris, aes(x = Sepal.Length, fill = Species)) + geom_density(alpha = 0.5)
+```
+
+```{r}
+# boxplots and violin plots in ggplot
+ggplot(iris, aes(x = Species, y = Sepal.Length)) + geom_boxplot()
+ggplot(iris, aes(x = Species, y = Sepal.Length)) + geom_violin()
+```
+
+```{r}
+# Recall we used summary() to get the 5 number summary of Sepal.Length; however, we found that Sepal.Length is dependent on species.
+# Let's build up to that point first.
+
+```
+
+```{r}
+# piping commands in tidyverse
+
+# Recall, in order to make our plots, we used the following command:
+ggplot(iris, aes(x = Species, y = Sepal.Length)) + geom_boxplot()
+
+# Alternatively, we can pipe our data 'iris' into ggplot() using '%>%'
+iris %>% ggplot(aes(x = Species, y = Sepal.Length)) + geom_boxplot()
+
+# We can take this approach with other functions we used in the past as well.
+iris %>% head()
+iris$Sepal.Length %>% summary()
+
+
+# Piping is extremely useful for chaining multiple functions.
+# general idea for piping: [input data] %>% function %>% function %>% ...
+# more on this later
+```
+
+
+```{r}
+# selecting columns in tidyverse
+# Recall: We used iris$Sepal.Length to get one column of data from 'iris'. We can also use select() to
+#         accomplish the same thing.
+
+iris %>% select(Sepal.Length)
+
+# not super interesting by itself, but super useful when used in tandem with other functions
+```
+
+```{r}
+# filtering data in tidyverse
+# The 'iris' tibble contains samples from all species. We found that flower characteristics are dependent on the species, so let's subset the datset into their species.
+
+iris %>% filter(Species == "setosa")
+
+# What if we are interested in finding the number of setosa samples that have a Sepal.Length greater than or equal to 5?
+iris %>% filter(Species == "setosa", Sepal.Length >= 5) %>% dim()
+
+# characters in filter()
+# '==' is equal to
+# '!=' is not equal to
+# '<' is less than
+# '<=' is less than or equal to
+# '>' is greater than
+# '>=' is greater than or equal to
+```
+
+```{r}
+# Putting it all together
+# Let's ask our original question again: How can we get the 5 number summary of Sepal.Length for each species?
+
+# Think about what series of steps you need to do first to accomplish this:
+# 1. Filter 'iris' by species.
+# 2. Select the appropriate column.
+# 3. Get the 5 number statistic.
+
+iris %>% filter(Species == "setosa") %>% select(Sepal.Length) %>% summary()
+
+# Follow-up question: From the boxplot, we noticed that there was a single outlier in the Sepal.Length in virginica. How can we filter that sample out of our dataset?
+
+iris %>% filter(Species == "virginica", Sepal.Length >= 5.5)
+```
+
+```{r}
+# summarize datasets in tidyverse
+# While summary() tells us the 5 number stats for a column of data, the output is not easily readable as a tibble. Instead, we can use summarize() to get summary statistics and save them as a tibble.
+
+# Problem statement: For each species in 'iris', we want to determine the mean sepal length.
+iris %>%
+  group_by(Species) %>% # for each species in 'iris'
+  summarize(mean = mean(Sepal.Length)) # determine the mean sepal length
+
+# Let's save this tibble so we can do some data visualization.
+sepal.length.means <- iris %>%
+  group_by(Species) %>%
+  summarize(mean = mean(Sepal.Length))
+```
+
+```{r}
+# simple bar plots in ggplot
+sepal.length.means %>% ggplot(aes(x = Species, y = mean)) + geom_col()
+```
+
+```{r}
+# mutating tibbles in tidyverse
+# What if I wanted to add an extra column in 'sepal.length.means' that states the flower characteristc? We can add columns to existing tibbles with mutate().
+
+sepal.length.means %>% mutate(flower.char = "Sepal.Length")
+
+# Let's overwrite sepal.length.means
+sepal.length.means <- sepal.length.means %>% mutate(flower.char = "Sepal.Length")
+```
+
+```{r}
+# putting tibbles together with bind_rows()
+
+# I want to make a bar plot where the x-axis is the flower part, the y-axis is the mean, and display the mean for each species at a given flower characteristic.
+
+# We already have 'sepal.length.means' so we need to generate the same summaries for each flower characteristic now.
+sepal.width.means <- iris %>%
+  group_by(Species) %>%
+  summarize(mean = mean(Sepal.Width),
+            flower.char = "Sepal.Width")
+petal.length.means <- iris %>%
+  group_by(Species) %>%
+  summarize(mean = mean(Petal.Length),
+            flower.char = "Petal.Length")
+petal.width.means <- iris %>%
+  group_by(Species) %>%
+  summarize(mean = mean(Petal.Width),
+            flower.char = "Petal.Width")
+
+# Let's use bind_rows() to put these small tibbles together.
+bind_rows(sepal.length.means, sepal.width.means, petal.length.means, petal.width.means)
+iris_means <- bind_rows(sepal.length.means, sepal.width.means, petal.length.means, petal.width.means) # save the tibble
+
+# Let's now create the barplot.
+iris_means %>% ggplot(aes(x = flower.char, y = mean, fill = Species)) + geom_col(position = "dodge")
+
+# Generating a separate column that lists the flower part was a necessary step because it allows us to visualize more than one category in our plots.
+```
+
+
+
+
+
+```{r}
+# pivoting tibbles in tidyverse
+
+# The last approach is a quick and dirty way of dealing with adding an extra column of data. However, it can quickly become time consuming in larger datasets since we would need to generate small tibbles for each category. Instead, we can pivot the tibble. Take this summarized tibble as an example:
+
+iris %>% group_by(Species) %>%
+  summarize(sepal.length.mean = mean(Sepal.Length),
+            sepal.width.mean = mean(Sepal.Width),
+            petal.length.mean = mean(Petal.Length),
+            petal.width.mean = mean(Petal.Width))
+
+# Here, each row is a species and each column is the mean for an associated flower characteristic. We can pivot this tibble such that each row has one observation (in this case, it would be a mean) and a new column is created that describes the flower characteristic (aka long format).
+
+iris_means_wide <- iris %>% group_by(Species) %>%
+  summarize(sepal.length.mean = mean(Sepal.Length),
+            sepal.width.mean = mean(Sepal.Width),
+            petal.length.mean = mean(Petal.Length),
+            petal.width.mean = mean(Petal.Width))
+
+# pivoting to long format
+iris_means_wide %>% pivot_longer(-c(Species),
+                                 names_to = "flower.char",
+                                 values_to = "mean")
+
+# We can do some string manipulation to remove the ".mean" in 'flower.char', but that is outside the scope of these sessions.
+```
+
+
+
+
+
+
+
