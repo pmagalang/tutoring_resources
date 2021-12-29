@@ -1,0 +1,167 @@
+---
+title: "Tidyverse Practice"
+author: "Paulo Magalang"
+date: "12/11/2021"
+output: html_document
+---
+
+Here are the packages you will need to complete these practice examples:
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+```
+
+and the data you will need (NOTE: you need to put the data in a folder called 'data')
+```{r, message = FALSE}
+cars <- read_csv("data/auto_mpg.csv")
+chickenpox <- read_csv("data/hungary_chickenpox.csv")
+```
+
+Check to see if the data loaded in properly.
+```{r}
+head(cars)
+head(chickenpox)
+```
+
+## Auto-mpg Dataset
+
+The auto-mpg dataset contains information on the mileage of cars as well as a car's features.
+
+Here is some light data preprocessing that I have done for you:
+```{r}
+colnames(cars)[7] <- "model_year"
+colnames(cars)[9] <- "car_name"
+```
+
+
+1. Because we are unfamiliar with these data, we need to do some exploratory analyses first. Generate a bar plot
+that describes the number of samples that belong to a car brand. (Hint: you need to generate a summary table using
+summarize())
+
+```{r}
+sample_counts <- cars %>% group_by(car_name) %>%
+  summarize(count = n())
+
+sample_counts %>% ggplot(aes(x = car_name, y = count)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) + 
+  xlab("Car Brand") + ylab("Num. of Samples") + ggtitle("Number of Samples per Car Brand")
+```
+
+2. From our bar plot, it seems like there are some car brands that do not have many samples. Filter out
+car brands from our dataset that have less than or equal to 3 samples. Save the filtered data as a variable
+named 'cars_filtered'
+
+```{r}
+# first determine the car brands with low numbers of samples
+sample_counts %>% filter(count <= 3)
+```
+
+```{r}
+# now that we know which brands have low counts, let's filter them out from our entire 'cars' dataset
+cars_filtered <- cars %>% filter(car_name != "bmw", car_name != "cadillac", car_name != "capri", car_name != "chevy",
+                                 car_name != "hi", car_name != "mercedes", car_name != "nissan", car_name != "triumph")
+```
+
+
+3. With our filtered dataset, let's visualize the mean mpg and mean acceleration as a grouped bar plot.
+
+```{r}
+cars_summary <- cars_filtered %>% group_by(car_name) %>%
+  summarize(mean_mpg = mean(mpg),
+            mean_acc = mean(acceleration)) %>%
+  pivot_longer(c(mean_mpg, mean_acc),
+               names_to = "car_feature",
+               values_to = "value")
+```
+
+```{r}
+cars_summary %>% ggplot(aes(x = car_feature, y = value, fill = car_name)) + geom_col(position = "dodge") +
+  xlab("Car Feature")
+```
+
+4. Let's also generate a grouped box plot of acceleration and mpg for our filtered data.
+
+```{r}
+cars_filtered %>% select(car_name, mpg, acceleration) %>%
+  pivot_longer(c(mpg, acceleration),
+               names_to = "car_feature",
+               values_to = "value") %>%
+  ggplot(aes(x = car_feature, y = value, fill = car_name)) + geom_boxplot()
+```
+
+
+## Hungary chickenpox dataset
+
+This dataset contains information on chickenpox cases from counties in Hungary over 2005 to 2014.
+
+
+Some data preprocessing that I have done for you:
+```{r}
+chickenpox <- chickenpox %>% separate(Date, into = c("day", "month", "year"), sep = "/", convert = FALSE)
+```
+
+
+1. Using the data from 2005 only, generate a line plot that shows how cases fluctuate per month.
+
+```{r}
+chickenpox_2005 <- chickenpox %>% filter(year == "2005") %>% 
+  pivot_longer(-c(day, month, year), names_to = "county", values_to = "cases") %>%
+  group_by(month, county) %>% summarize(total_cases = sum(cases))
+
+chickenpox_2005
+```
+
+```{r}
+chickenpox_2005 %>% ggplot(aes(x = month, y = total_cases, group = county, color = county)) + geom_line()
+```
+
+
+2. Now, make a line plot that shows the number of cases per month averaged over all years (2005 to 2014) for each
+county.
+
+```{r}
+chickenpox_long <- chickenpox %>%
+  pivot_longer(cols = -c(day, month, year), names_to = "county", values_to = "cases")
+
+chickenpox_avg <- chickenpox_long %>% group_by(month, county) %>%
+  summarize(avg_cases = mean(cases))
+
+chickenpox_avg %>% ggplot(aes(x = month, y = avg_cases, group = county, color = county)) + geom_line()
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

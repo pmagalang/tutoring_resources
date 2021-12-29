@@ -1,0 +1,106 @@
+---
+title: "Tidyverse Practice Part 2"
+author: "Paulo Magalang"
+date: "12/27/2021"
+output: html_document
+---
+
+Here are the packages you will need to complete these practice examples:
+```{r, message = FALSE, warning = FALSE}
+library(tidyverse)
+```
+
+and the data you will need (NOTE: you need to put the data in a folder called 'data')
+```{r, message = FALSE}
+tips <- read_csv("data/tips.csv")
+```
+
+Check to see if the data loaded in properly.
+```{r}
+head(tips)
+```
+
+This is a dataset of a waiter's tips from a restaurant. We are interested in determining if different groups of people or the day and time of service increases or decreases the waiter's tip.
+
+1. There are columns in our data that have information of the sex of the person giving the tip, the day of service, and the time of service.
+
+1a. How many samples of men and women are in our dataset? Generate a plot that best visualizes this data. Are the number of samples between males and females the same or different? Do you think this will be a problem in later statistical analyses?
+
+```{r}
+tips %>% group_by(sex) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(x = sex, y = count)) + geom_col()
+```
+
+1b. Determine the amount of samples taken on each day of the week. Generate a plot that best visualizes this data. Are the number of samples among the days of the week the same or different? Do you think this will be a problem in later statistical analyses?
+
+```{r}
+tips %>% group_by(day) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(x = factor(day, level = c('Thur', 'Fri', 'Sat', 'Sun')), y = count)) + geom_col() +
+  xlab("Day of the Week")
+```
+
+1c. Determine the amount of samples taken on each time of service. Generate a plot that best visualizes this data. Are the number of samples between dinner and lunch the same or different? Do you think this will be a problem in later statistical analyses?
+
+```{r}
+tips %>% group_by(time) %>%
+  summarize(count = n()) %>%
+  ggplot(aes(x = time, y = count)) + geom_col()
+```
+
+2. Visualize the distribution of the values of the total bill and the values of the customer's tip. Does the distribution of data resemble a normal distribution? Are there any obvious outliers in our data?
+
+```{r}
+tips %>% ggplot(aes(x = total_bill)) + geom_histogram()
+```
+
+```{r}
+tips %>% ggplot(aes(x = tip)) + geom_histogram()
+```
+
+
+These plots are only useful to see what our data looks like for filtering or other later preprocessing, but do not tell us how the tip amount changes with respect to the characteristics of the customer.
+
+3. What is the relationship between the customer's tip value and the sex of the customer? Generate a plot that best describes this relationship. Is there a noticeable difference between tipping habits in males and females?
+
+```{r}
+tips %>% ggplot(aes(x = sex, y = tip)) + geom_boxplot()
+```
+
+4. What is the relationship between the customer's tip value and the day of service? Generate a plot that best describes this relationship. Is there a noticeable difference in tipping values among the days of the week?
+
+```{r}
+tips %>% ggplot(aes(x = factor(day, level = c('Thur', 'Fri', 'Sat', 'Sun')), y = tip)) + geom_boxplot() +
+  xlab("Day of the Week")
+```
+
+5. What is the relationship between the customer's tip value and the time of service? Generate a plot that best describes this relationship. Is there a noticeable difference in tipping values between lunch and dinner?
+
+```{r}
+tips %>% ggplot(aes(x = time, y = tip)) + geom_boxplot()
+```
+
+Exploring the relationship between the tip amount and one factor (ie: what you did in #3-5) gives us some insight as to what influences a customer's tip. What if we want to compare with more than one factor like using the day and time of service together or any other combination?
+
+6. What is the relationship between the tip amount in relation to the day and time of service? Generate a plot that best visualizes this data. Are we able to make a comment with the available data?
+
+```{r}
+tips %>% ggplot(aes(x = factor(day, level = c('Thur', 'Fri', 'Sat', 'Sun')), y = tip, fill = time)) + geom_boxplot() +
+  xlab("Day of Service")
+```
+
+7. What is the relationship between the tip amount in relation to the day of service and sex of customer? Generate a plot that best visualizes this data. Are there any relationships we can make a statement about?
+
+```{r}
+tips %>% ggplot(aes(x = factor(day, level = c('Thur', 'Fri', 'Sat', 'Sun')), y = tip, fill = sex)) + geom_boxplot() +
+  xlab("Day of Service")
+```
+
+
+
+
+
+
+
+
